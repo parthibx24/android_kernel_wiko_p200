@@ -1,0 +1,96 @@
+These are the instructions to rebuilding the source code.
+
+In the archive you will find sources for:
+
+* Linux kernel
+* platform
+* toolchain
+
+First of all, install Ubuntu 14.04 (64 bit)
+
+It is recommended to use the prebuilt toolchain from Google, which can be downloaded from:
+
+https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-6.3.1/+archive/master.tar.gz
+
+Create a directory (for example: /tmp/toolchain ) and unpack the prebuilt toolchain:
+
+
+1. Rebuilding kernel:
+
+    Create a directory (for example: /tmp/toolchain ) and unpack the prebuilt toolchain:
+    $ mkdir -p /tmp/toolchain 
+    $ wget 'https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-6.3.1/+archive/master.tar.gz'
+    $ tar -zxvf arm-eabi-6.3.1.tar.gz -C /tmp/toolchain
+
+    unpack kernel for rebuild
+
+
+    $ tar -zxvf kernel-4.4.tar.gz
+    $ cd kernel-4.4
+    $ gedit Makefile
+
+    Then modify the top level Makefile to set the right prefix for the cross compiler. Specifically, change
+    CROSS_COMPILE  ?= $(CONFIG_CROSS_COMPILE:"%"=%)
+    to
+    CROSS_COMPILE  ?= /tmp/toolchain/arm-eabi-6.3.1/bin/arm-eabi-
+    (or wherever your toolchain is located)
+
+    $ export TARGET_BUILD_VARIANT=user
+    $ export ARCH=arm
+    $ mkdir out
+    $ make O=out TARGET_ARCH=arm  p200_defconfig
+    $ make O=out TARGET_ARCH=arm
+
+   Output files:
+     Kernel: out/arch/arm/boot/zImage or zImage-dtb
+     module: out/drivers/*/*.ko
+	
+   How to clean
+     $ make clean
+
+2. Rebuilding Mobule for Platform
+
+    It is only for modules are needed to using Android build system.
+    Please check its own install information under its folder for other module.
+
+    First install build envirment
+    $ sudo apt-get install git gnupg flex bison gperf build-essential \
+      zip curl libc6-dev libncurses5-dev:i386 x11proto-core-dev \
+      libx11-dev:i386 libreadline6-dev:i386 libgl1-mesa-glx:i386 \
+      libgl1-mesa-dev g++-multilib mingw32 tofrodos \
+      python-markdown libxml2-utils xsltproc zlib1g-dev:i386
+    $ sudo ln -s /usr/lib/i386-linux-gnu/mesa/libGL.so.1 /usr/lib/i386-linux-gnu/libGL.so
+
+    install JDK 1.8
+    $ sudo apt-get update
+    $ sudo apt-get install openjdk-8-jdk
+
+    install repo
+    $ mkdir ~/bin
+    $ PATH=~/bin:$PATH
+    $ curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+    $ chmod a+x ~/bin/repo
+
+    Get android open source: version info - Android 8.1.0
+    $ mkdir WORKING_DIRECTORY
+    $ cd WORKING_DIRECTORY
+    $ git config --global user.name "Your Name"
+    $ git config --global user.email "you@example.com"
+    $ repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r1
+    $ repo sync
+
+    Copy module that you want to build - to original android open source
+    If same module exist in android open source, you should replace it. (no overwrite)
+
+    Use the android build method to rebuild every module
+    $ cd WORKING_DIRECTORY
+    $ source build/envsetup.sh
+    $ lunch aosp_arm-user
+    $ make -j4
+    
+3.Rebuilding the toolchain
+
+   To rebuild the toolchain please follow the instructions as provided by Google.
+
+
+
